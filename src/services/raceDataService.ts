@@ -1,5 +1,5 @@
 
-import { timeToSeconds, secondsToTime } from '../utils/timeUtils';
+import { timeToSeconds, secondsToTime, formatTimeString } from '../utils/timeUtils';
 
 export interface RaceRatio {
   source: string;
@@ -81,9 +81,9 @@ export function findRatio(sourceRace: string, targetRace: string): number | null
 }
 
 export function predictTime(sourceTime: string, sourceRace: string, targetRace: string): string {
-  // If same race, return source time
+  // If same race, return source time with proper formatting
   if (sourceRace === targetRace) {
-    return sourceTime;
+    return formatTimeString(sourceTime);
   }
   
   const ratio = findRatio(sourceRace, targetRace);
@@ -92,8 +92,6 @@ export function predictTime(sourceTime: string, sourceRace: string, targetRace: 
   const secondsSource = timeToSeconds(sourceTime);
   if (secondsSource <= 0) return "00:00:00";
   
-  // The ratio in the CSV represents (target time / source time)
-  // So we need to use the ratio directly to calculate the predicted time
-  const secondsTarget = secondsSource / ratio; // Changed from multiplication to division
+  const secondsTarget = secondsSource / ratio;
   return secondsToTime(secondsTarget);
 }

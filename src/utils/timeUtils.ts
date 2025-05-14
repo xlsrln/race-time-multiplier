@@ -44,14 +44,20 @@ export function formatTimeString(timeString: string): string {
   const parts = timeString.split(':');
   
   if (parts.length === 3) {
-    // Already in HH:MM:SS format
-    return timeString;
+    // Already in HH:MM:SS format, but ensure each part is zero-padded
+    const [hours, minutes, seconds] = parts.map(part => 
+      part.padStart(2, '0')
+    );
+    return `${hours}:${minutes}:${seconds}`;
   } else if (parts.length === 2) {
     // MM:SS format - add hours
-    return `00:${timeString}`;
+    const [minutes, seconds] = parts.map(part => 
+      part.padStart(2, '0')
+    );
+    return `00:${minutes}:${seconds}`;
   } else if (parts.length === 1) {
     // Just seconds
-    return `00:00:${timeString}`;
+    return `00:00:${parts[0].padStart(2, '0')}`;
   }
   
   return "00:00:00";

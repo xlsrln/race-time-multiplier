@@ -21,11 +21,17 @@ interface SourceRaceEntry {
   time: string;
 }
 
+interface PredictionResult {
+  time: string;
+  min: string;
+  max: string;
+}
+
 const RacePredictor: React.FC = () => {
   const [raceNames, setRaceNames] = useState<string[]>([]);
   const [sourceRaces, setSourceRaces] = useState<SourceRaceEntry[]>([{ race: "", time: "" }]);
   const [targetRace, setTargetRace] = useState<string>("");
-  const [predictedTime, setPredictedTime] = useState<string>("");
+  const [predictedResult, setPredictedResult] = useState<PredictionResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -100,7 +106,8 @@ const RacePredictor: React.FC = () => {
     const validPredictions = predictions.filter(pred => pred !== "No data available");
     
     if (validPredictions.length === 0) {
-      setPredictedTime("No data available");
+      setPredictedResult(null);
+      toast.error("No valid predictions available");
       return;
     }
     
@@ -108,13 +115,7 @@ const RacePredictor: React.FC = () => {
       toast.warning(`${predictions.length - validPredictions.length} prediction(s) could not be calculated due to missing data`);
     }
     
-    // If only one valid prediction, use it directly
-    if (validPredictions.length === 1) {
-      setPredictedTime(validPredictions[0]);
-      return;
-    }
-    
-    // Calculate average prediction
+    // Calculate average, min, and max predictions
     const secondsArray = validPredictions.map(time => {
       const parts = time.split(':');
       const hours = parseInt(parts[0], 10);
@@ -125,13 +126,23 @@ const RacePredictor: React.FC = () => {
     
     const totalSeconds = secondsArray.reduce((sum, seconds) => sum + seconds, 0);
     const averageSeconds = totalSeconds / validPredictions.length;
+    const minSeconds = Math.min(...secondsArray);
+    const maxSeconds = Math.max(...secondsArray);
     
-    // Convert average seconds back to HH:MM:SS format
-    const hours = Math.floor(averageSeconds / 3600);
-    const minutes = Math.floor((averageSeconds % 3600) / 60);
-    const seconds = Math.floor(averageSeconds % 60);
+    // Convert seconds back to HH:MM:SS format
+    const formatTimeFromSeconds = (seconds: number) => {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
+      
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    };
     
-    setPredictedTime(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+    setPredictedResult({
+      time: formatTimeFromSeconds(averageSeconds),
+      min: formatTimeFromSeconds(minSeconds),
+      max: formatTimeFromSeconds(maxSeconds)
+    });
   };
   
   const addSourceRace = () => {
@@ -261,10 +272,25 @@ const RacePredictor: React.FC = () => {
               </div>
             )}
             
-            {predictedTime && (
-              <div className="mt-6 p-4 border rounded-lg bg-muted/50">
-                <p className="text-sm font-medium text-muted-foreground">Predicted time:</p>
-                <p className="text-3xl font-bold text-center">{predictedTime}</p>
+            {predictedResult && (
+              <div className="mt-6 p-4 border rounded-lg bg-muted/50 space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Predicted time:</p>
+                  <p className="text-3xl font-bold text-center">{predictedResult.time}</p>
+                </div>
+                
+                {sourceRaces.length > 1 && (
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Min prediction:</p>
+                      <p className="text-lg font-semibold">{predictedResult.min}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Max prediction:</p>
+                      <p className="text-lg font-semibold">{predictedResult.max}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </>
