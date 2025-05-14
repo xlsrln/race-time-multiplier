@@ -36,7 +36,7 @@ const RacePredictorContainer: React.FC = () => {
     <Card className="w-full max-w-2xl">
       <CardHeader>
         <CardDescription className="text-center">
-          Predict your finish time for a race based on your performance in other races.
+          Predict your finish time for a race based on your performance in other races. Currently contains a selection of ultra races in Sweden.
         </CardDescription>
       </CardHeader>
       
@@ -90,8 +90,7 @@ const RacePredictorContainer: React.FC = () => {
       </CardContent>
       
       <CardFooter className="text-xs text-center text-muted-foreground flex flex-col justify-center gap-2">
-        <p>Based on historical data from race finishers</p>
-        <p className="italic">Disclaimer: Race conditions and routes may vary year to year. These predictions should be considered as indications only.</p>
+        <p>Based on historical data from race finishers who finished both races in the same year. Race conditions and routes may vary year to year. These predictions should be considered as indications only.</p>
         <p className="pt-2 text-xs font-medium">by axel sarlin</p>
       </CardFooter>
     </Card>
