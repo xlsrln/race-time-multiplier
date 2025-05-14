@@ -10,12 +10,16 @@ import NotFound from "./pages/NotFound";
 // Create a new query client
 const queryClient = new QueryClient();
 
+// Determine if we're in preview mode (no basename needed) or production (with basename)
+const isPreviewEnv = window.location.hostname.includes('preview--');
+const baseName = isPreviewEnv ? '/' : '/race-time-multiplier';
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter basename="/race-time-multiplier">
+      <BrowserRouter basename={baseName}>
         <Routes>
           <Route path="/" element={<Index />} />
           {/* Redirect any broken links back to home */}

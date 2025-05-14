@@ -6,8 +6,8 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // Set the base path for GitHub Pages deployment
-  base: '/race-time-multiplier/',
+  // Use conditional base path - empty for preview, /race-time-multiplier/ for production
+  base: mode === 'preview' ? '/' : '/race-time-multiplier/',
   server: {
     host: "::",
     port: 8080,
