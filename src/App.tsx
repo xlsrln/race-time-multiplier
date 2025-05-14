@@ -10,12 +10,22 @@ import NotFound from "./pages/NotFound";
 // Create a new query client
 const queryClient = new QueryClient();
 
+// Get base name for router based on environment
+const getBaseName = () => {
+  // For GitHub Pages we need the repository name as the base
+  if (window.location.hostname.includes('github.io')) {
+    return '/race-time-multiplier';
+  }
+  // For all other environments (local, preview, etc.)
+  return '/';
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename={getBaseName()}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="*" element={<NotFound />} />
