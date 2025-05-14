@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -5,6 +6,9 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Base path for GitHub Pages - change this to your repository name
+  // For example, if your repo is "username/race-time-predictor", use "/race-time-predictor/"
+  base: mode === 'production' ? '/race-time-predictor/' : '/',
   server: {
     host: "::",
     port: 8080,
