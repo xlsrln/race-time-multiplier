@@ -35,14 +35,16 @@ function parseRaceData(csvText: string): void {
 
   // Parse header to find column indexes - trim to handle any whitespace
   const header = lines[0].split(',').map(h => h.trim());
-  const sourceIndex = header.indexOf('source');
-  const targetIndex = header.indexOf('target');
-  const ratioAvgIndex = header.indexOf('ratio_avg');
-  const ratioMedianIndex = header.indexOf('ratio_median');
+  
+  // Map the new column names to our expected ones
+  const sourceIndex = header.indexOf('event1');
+  const targetIndex = header.indexOf('event2');
   const ratioWinnerIndex = header.indexOf('ratio_winner');
+  const ratioMedianIndex = header.indexOf('ratio_median');
+  const ratioAvgIndex = header.indexOf('ratio_avg');
   
   console.log('CSV headers parsed:', { 
-    header: header, 
+    header, 
     sourceIndex, 
     targetIndex, 
     ratioAvgIndex, 
@@ -51,7 +53,7 @@ function parseRaceData(csvText: string): void {
   });
   
   if (sourceIndex === -1 || targetIndex === -1) {
-    console.error('CSV format is invalid, missing required source/target columns', { header });
+    console.error('CSV format is invalid, missing required event1/event2 columns', { header });
     return;
   }
   
