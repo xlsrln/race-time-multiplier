@@ -66,10 +66,10 @@ const SourceRaceForm: React.FC<SourceRaceFormProps> = ({
           </div>
           
           <div className="w-1/2 space-y-2">
-            <Label htmlFor={`sourceTime-${index}`}>Time (HH:MM or MM:SS)</Label>
+            <Label htmlFor={`sourceTime-${index}`}>Time (HH:MM)</Label>
             <Input 
               id={`sourceTime-${index}`} 
-              placeholder="hh:mm or mm:ss" 
+              placeholder="HH:MM" 
               value={entry.time} 
               onChange={(e) => updateSourceRace(index, 'time', e.target.value)} 
             />

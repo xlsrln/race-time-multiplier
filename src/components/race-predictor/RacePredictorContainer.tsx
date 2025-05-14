@@ -90,8 +90,9 @@ const RacePredictorContainer: React.FC = () => {
         )}
       </CardContent>
       
-      <CardFooter className="text-xs text-center text-muted-foreground flex justify-center">
+      <CardFooter className="text-xs text-center text-muted-foreground flex flex-col justify-center gap-2">
         <p>Based on historical data from race finishers</p>
+        <p className="italic">Disclaimer: Race conditions and routes may vary year to year. These predictions should be considered as indications only.</p>
       </CardFooter>
     </Card>
   );

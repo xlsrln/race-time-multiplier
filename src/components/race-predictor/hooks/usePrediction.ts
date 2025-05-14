@@ -26,31 +26,20 @@ export function usePrediction() {
       return;
     }
     
-    // Validate time format for all entries
-    const timePattern = /^(\d{1,2}:)?(\d{1,2})(?::(\d{1,2}))?$/;
+    // Validate time format for all entries (HH:MM format)
+    const timePattern = /^(\d{1,2}):(\d{1,2})$/;
     const invalidTimes = sourceRaces.filter(entry => !timePattern.test(entry.time));
     if (invalidTimes.length > 0) {
-      toast.warning("Please enter valid times (HH:MM, MM:SS or HH:MM:SS)");
+      toast.warning("Please enter valid times in HH:MM format");
       return;
     }
     
-    // Format times to ensure they're all in HH:MM:SS format
+    // Format times to ensure they're all in HH:MM:SS format for processing
     const formattedEntries = sourceRaces.map(entry => {
-      const parts = entry.time.split(':');
-      let formattedTime = entry.time;
-      
-      // If only two parts, assume it's MM:SS and add 00 for hours
-      if (parts.length === 2) {
-        formattedTime = `00:${entry.time}`;
-      }
-      // If only one part, assume it's just seconds
-      else if (parts.length === 1) {
-        formattedTime = `00:00:${entry.time}`;
-      }
-      
+      // Add 00 seconds to the HH:MM format
       return {
         race: entry.race,
-        time: formattedTime
+        time: `${entry.time}:00`
       };
     });
     

@@ -33,10 +33,6 @@ const PredictionResult: React.FC<PredictionResultProps> = ({
           </div>
         </div>
       )}
-      
-      <div className="pt-2 text-xs text-muted-foreground border-t border-border/50">
-        <p className="italic">Disclaimer: Race conditions and routes may vary year to year. These predictions should be considered as indications only.</p>
-      </div>
     </div>
   );
 };
