@@ -81,9 +81,11 @@ export function findRatio(sourceRace: string, targetRace: string): number | null
 }
 
 export function predictTime(sourceTime: string, sourceRace: string, targetRace: string): string {
-  // If same race, return source time with proper formatting
+  // If same race, return source time with proper formatting, but first convert to seconds and back
+  // to ensure consistent formatting
   if (sourceRace === targetRace) {
-    return formatTimeString(sourceTime);
+    const seconds = timeToSeconds(sourceTime);
+    return secondsToTime(seconds);
   }
   
   const ratio = findRatio(sourceRace, targetRace);
