@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardDescription, CardFooter } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -33,9 +33,8 @@ const RacePredictorContainer: React.FC = () => {
   };
   
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-2xl">
       <CardHeader>
-        <CardTitle className="text-2xl text-center">Race Time Predictor</CardTitle>
         <CardDescription className="text-center">
           Predict your finish time for a race based on your performance in other races.
         </CardDescription>
@@ -93,6 +92,7 @@ const RacePredictorContainer: React.FC = () => {
       <CardFooter className="text-xs text-center text-muted-foreground flex flex-col justify-center gap-2">
         <p>Based on historical data from race finishers</p>
         <p className="italic">Disclaimer: Race conditions and routes may vary year to year. These predictions should be considered as indications only.</p>
+        <p className="pt-2 text-xs font-medium">by axel sarlin</p>
       </CardFooter>
     </Card>
   );
