@@ -12,7 +12,7 @@ let raceNames: string[] = [];
 
 export async function fetchRaceData(): Promise<void> {
   try {
-    const response = await fetch('https://raw.githubusercontent.com/xlsrln/urtp/main/avg_ratios.csv');
+    const response = await fetch('https://raw.githubusercontent.com/xlsrln/urtp/main/combined_ratios.csv');
     if (!response.ok) {
       throw new Error('Failed to fetch race data');
     }
