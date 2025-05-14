@@ -1,5 +1,5 @@
 
-import RacePredictor from "@/components/RacePredictor";
+import { RacePredictor } from "@/components";
 
 const Index = () => {
   return (
