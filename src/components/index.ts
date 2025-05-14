@@ -1,2 +1,2 @@
 
-export { default as RacePredictor } from './RacePredictor';
+export { default as RacePredictor } from './race-predictor';

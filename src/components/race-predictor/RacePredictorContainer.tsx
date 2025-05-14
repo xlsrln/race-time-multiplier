@@ -1,0 +1,100 @@
+
+import React from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { ArrowRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
+import SourceRaceForm from './SourceRaceForm';
+import TargetRaceSelector from './TargetRaceSelector';
+import PredictionResult from './PredictionResult';
+import LoadingState from './LoadingState';
+
+import { useRaceData } from './hooks/useRaceData';
+import { usePrediction } from './hooks/usePrediction';
+
+const RacePredictorContainer: React.FC = () => {
+  const {
+    raceNames,
+    sourceRaces,
+    targetRace,
+    isLoading,
+    error,
+    setTargetRace,
+    addSourceRace,
+    removeSourceRace,
+    updateSourceRace
+  } = useRaceData();
+  
+  const { predictedResult, handlePrediction } = usePrediction();
+  
+  const onPredictClick = () => {
+    handlePrediction(sourceRaces, targetRace);
+  };
+  
+  return (
+    <Card className="w-full max-w-md">
+      <CardHeader>
+        <CardTitle className="text-2xl text-center">Race Time Predictor</CardTitle>
+        <CardDescription className="text-center">
+          Predict your finish time for a race based on your performance in other races.
+        </CardDescription>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        <LoadingState isLoading={isLoading} error={error} />
+        
+        {!isLoading && !error && (
+          <>
+            <SourceRaceForm
+              sourceRaces={sourceRaces}
+              raceNames={raceNames}
+              updateSourceRace={updateSourceRace}
+              addSourceRace={addSourceRace}
+              removeSourceRace={removeSourceRace}
+            />
+            
+            <div className="flex items-center justify-center my-4">
+              <ArrowRight className="text-muted-foreground" />
+            </div>
+            
+            <TargetRaceSelector
+              targetRace={targetRace}
+              setTargetRace={setTargetRace}
+              raceNames={raceNames}
+            />
+            
+            <Button 
+              className="w-full mt-4" 
+              onClick={onPredictClick}
+              disabled={!targetRace || sourceRaces.some(entry => !entry.race || !entry.time)}
+            >
+              Predict Time
+            </Button>
+            
+            {sourceRaces.length > 1 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Badge variant="outline" className="text-xs">Using average of {sourceRaces.length} races</Badge>
+              </div>
+            )}
+            
+            {predictedResult && (
+              <PredictionResult
+                time={predictedResult.time}
+                min={predictedResult.min}
+                max={predictedResult.max}
+                sourceRacesCount={sourceRaces.length}
+              />
+            )}
+          </>
+        )}
+      </CardContent>
+      
+      <CardFooter className="text-xs text-center text-muted-foreground flex justify-center">
+        <p>Based on historical data from race finishers</p>
+      </CardFooter>
+    </Card>
+  );
+};
+
+export default RacePredictorContainer;
