@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { predictTime } from '../../../services/raceDataService';
+import { predictTime, PredictionResult as ServicePredictionResult } from '../../../services/raceDataService';
 import { toast } from 'sonner';
 import { secondsToTime } from '../../../utils/timeUtils';
 
@@ -9,10 +9,22 @@ interface SourceRaceEntry {
   time: string;
 }
 
-interface PredictionResult {
-  time: string;
-  min: string;
-  max: string;
+export interface PredictionResult {
+  avg: {
+    time: string;
+    min: string;
+    max: string;
+  };
+  median?: {
+    time: string;
+    min: string;
+    max: string;
+  };
+  winner?: {
+    time: string;
+    min: string;
+    max: string;
+  };
 }
 
 export function usePrediction() {
@@ -49,7 +61,7 @@ export function usePrediction() {
     });
     
     // Filter out any "No data available" predictions
-    const validPredictions = predictions.filter(pred => pred !== "No data available");
+    const validPredictions = predictions.filter(pred => pred.avg !== "No data available");
     
     if (validPredictions.length === 0) {
       setPredictedResult(null);
@@ -61,8 +73,36 @@ export function usePrediction() {
       toast.warning(`${predictions.length - validPredictions.length} prediction(s) could not be calculated due to missing data`);
     }
     
+    // Process average predictions
+    const avgResult = processPredictions(validPredictions.map(p => p.avg));
+    
+    // Initialize result with average predictions
+    const result: PredictionResult = { avg: avgResult };
+    
+    // Process median predictions if available
+    const medianPredictions = validPredictions
+      .map(p => p.median)
+      .filter(p => p !== undefined) as string[];
+    
+    if (medianPredictions.length > 0) {
+      result.median = processPredictions(medianPredictions);
+    }
+    
+    // Process winner predictions if available
+    const winnerPredictions = validPredictions
+      .map(p => p.winner)
+      .filter(p => p !== undefined) as string[];
+    
+    if (winnerPredictions.length > 0) {
+      result.winner = processPredictions(winnerPredictions);
+    }
+    
+    setPredictedResult(result);
+  };
+  
+  function processPredictions(predictions: string[]): { time: string; min: string; max: string; } {
     // Calculate average, min, and max predictions
-    const secondsArray = validPredictions.map(time => {
+    const secondsArray = predictions.map(time => {
       const parts = time.split(':');
       const hours = parseInt(parts[0], 10);
       const minutes = parseInt(parts[1], 10);
@@ -71,17 +111,16 @@ export function usePrediction() {
     });
     
     const totalSeconds = secondsArray.reduce((sum, seconds) => sum + seconds, 0);
-    const averageSeconds = totalSeconds / validPredictions.length;
+    const averageSeconds = totalSeconds / predictions.length;
     const minSeconds = Math.min(...secondsArray);
     const maxSeconds = Math.max(...secondsArray);
     
-    // Use the utility function for consistent formatting
-    setPredictedResult({
+    return {
       time: secondsToTime(averageSeconds),
       min: secondsToTime(minSeconds),
       max: secondsToTime(maxSeconds)
-    });
-  };
+    };
+  }
   
   return { predictedResult, handlePrediction };
 }
