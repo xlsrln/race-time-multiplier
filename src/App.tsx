@@ -10,18 +10,27 @@ import NotFound from "./pages/NotFound";
 // Create a new query client
 const queryClient = new QueryClient();
 
-// Determine if we're in preview mode (no basename needed) or production (with basename)
-// Also handle GitHub Pages environment
+// Improved base path detection that works across all environments
 const getBaseName = () => {
   const hostname = window.location.hostname;
+  const pathname = window.location.pathname;
   
-  // Handle GitHub Pages (github.io domain)
+  // Local development
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return '/';
+  }
+  
+  // GitHub Pages (github.io domain)
   if (hostname.includes('github.io')) {
     return '/race-time-multiplier';
   }
   
-  // Handle Lovable preview environment
-  if (hostname.includes('preview--')) {
+  // Lovable preview environment
+  if (hostname.includes('preview--') || hostname.includes('.lovable.app')) {
+    // Check if we're already at the correct path
+    if (pathname.startsWith('/race-time-multiplier')) {
+      return '/race-time-multiplier';
+    }
     return '/';
   }
   
@@ -39,9 +48,7 @@ const App = () => (
       <BrowserRouter basename={baseName}>
         <Routes>
           <Route path="/" element={<Index />} />
-          {/* Redirect any broken links back to home */}
-          <Route path="/race-time-multiplier/*" element={<Navigate to="/" replace />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          {/* Catch any unmatched routes */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
