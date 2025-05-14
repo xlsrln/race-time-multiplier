@@ -5,23 +5,20 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  // Use conditional base path with improved detection logic
-  base: mode === 'preview' || process.env.NODE_ENV === 'development' 
-    ? '/' 
-    : '/race-time-multiplier/',
+export default defineConfig({
+  // Use a fixed base path that will work consistently across environments
+  base: "/",
   server: {
     host: "::",
     port: 8080,
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    process.env.NODE_ENV === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+});
