@@ -92,8 +92,8 @@ export function predictTime(sourceTime: string, sourceRace: string, targetRace: 
   const secondsSource = timeToSeconds(sourceTime);
   if (secondsSource <= 0) return "00:00:00";
   
-  // The ratio represents how much longer/shorter the target race is compared to the source race
-  // So we multiply by the ratio to get the predicted time
-  const secondsTarget = secondsSource * ratio;
+  // The ratio in the CSV represents (target time / source time)
+  // So we need to use the ratio directly to calculate the predicted time
+  const secondsTarget = secondsSource / ratio; // Changed from multiplication to division
   return secondsToTime(secondsTarget);
 }
