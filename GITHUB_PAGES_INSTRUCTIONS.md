@@ -14,8 +14,8 @@ When you push changes to the main branch, a GitHub Action will automatically bui
 
 2. Wait for the GitHub Action to complete (check the Actions tab in your GitHub repository)
 
-3. Your site will be available at: `https://yourusername.github.io/race-time-predictor/`
-   (Replace `yourusername` with your actual GitHub username and `race-time-predictor` with your repository name)
+3. Your site will be available at: `https://yourusername.github.io/race-time-multiplier/`
+   (Replace `yourusername` with your actual GitHub username)
 
 ## Manual Deployment
 
