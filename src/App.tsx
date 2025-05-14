@@ -11,8 +11,25 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 // Determine if we're in preview mode (no basename needed) or production (with basename)
-const isPreviewEnv = window.location.hostname.includes('preview--');
-const baseName = isPreviewEnv ? '/' : '/race-time-multiplier';
+// Also handle GitHub Pages environment
+const getBaseName = () => {
+  const hostname = window.location.hostname;
+  
+  // Handle GitHub Pages (github.io domain)
+  if (hostname.includes('github.io')) {
+    return '/race-time-multiplier';
+  }
+  
+  // Handle Lovable preview environment
+  if (hostname.includes('preview--')) {
+    return '/';
+  }
+  
+  // Default to production path
+  return '/race-time-multiplier';
+};
+
+const baseName = getBaseName();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

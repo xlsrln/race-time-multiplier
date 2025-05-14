@@ -26,6 +26,9 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # Ensure that the build is created with the correct base path
+          VITE_BASE_PATH: '/race-time-multiplier'
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
