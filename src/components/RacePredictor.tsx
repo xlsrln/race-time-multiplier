@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { fetchRaceData, getRaceNames, predictTime } from '../services/raceDataService';
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { secondsToTime } from '../utils/timeUtils';
 
 interface SourceRaceEntry {
   race: string;
@@ -129,19 +129,11 @@ const RacePredictor: React.FC = () => {
     const minSeconds = Math.min(...secondsArray);
     const maxSeconds = Math.max(...secondsArray);
     
-    // Convert seconds back to HH:MM:SS format
-    const formatTimeFromSeconds = (seconds: number) => {
-      const hours = Math.floor(seconds / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      const secs = Math.floor(seconds % 60);
-      
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    };
-    
+    // Use the utility function for consistent formatting
     setPredictedResult({
-      time: formatTimeFromSeconds(averageSeconds),
-      min: formatTimeFromSeconds(minSeconds),
-      max: formatTimeFromSeconds(maxSeconds)
+      time: secondsToTime(averageSeconds),
+      min: secondsToTime(minSeconds),
+      max: secondsToTime(maxSeconds)
     });
   };
   
