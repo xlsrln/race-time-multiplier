@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { fetchRaceData, getRaceNames, predictTime } from '../services/raceDataService';
 import { Button } from "@/components/ui/button";
@@ -283,6 +284,10 @@ const RacePredictor: React.FC = () => {
                     </div>
                   </div>
                 )}
+                
+                <div className="pt-2 text-xs text-muted-foreground border-t border-border/50">
+                  <p className="italic">Disclaimer: Race conditions and routes may vary year to year. These predictions should be considered as indications only.</p>
+                </div>
               </div>
             )}
           </>
