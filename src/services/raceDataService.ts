@@ -1,3 +1,4 @@
+
 import { timeToSeconds, secondsToTime, formatTimeString } from '../utils/timeUtils';
 
 export interface RaceRatio {
@@ -32,16 +33,25 @@ function parseRaceData(csvText: string): void {
   const lines = csvText.split('\n');
   if (lines.length < 2) return;
 
-  // Parse header to find column indexes
-  const header = lines[0].split(',');
+  // Parse header to find column indexes - trim to handle any whitespace
+  const header = lines[0].split(',').map(h => h.trim());
   const sourceIndex = header.indexOf('source');
   const targetIndex = header.indexOf('target');
   const ratioAvgIndex = header.indexOf('ratio_avg');
   const ratioMedianIndex = header.indexOf('ratio_median');
   const ratioWinnerIndex = header.indexOf('ratio_winner');
   
-  if (sourceIndex === -1 || targetIndex === -1 || ratioAvgIndex === -1) {
-    console.error('CSV format is invalid, missing required columns');
+  console.log('CSV headers parsed:', { 
+    header: header, 
+    sourceIndex, 
+    targetIndex, 
+    ratioAvgIndex, 
+    ratioMedianIndex, 
+    ratioWinnerIndex 
+  });
+  
+  if (sourceIndex === -1 || targetIndex === -1) {
+    console.error('CSV format is invalid, missing required source/target columns', { header });
     return;
   }
   
@@ -52,14 +62,13 @@ function parseRaceData(csvText: string): void {
     const line = lines[i].trim();
     if (!line) continue;
     
-    const values = line.split(',');
-    if (values.length <= Math.max(sourceIndex, targetIndex, ratioAvgIndex)) continue;
+    const values = line.split(',').map(v => v.trim());
+    if (values.length < Math.max(sourceIndex, targetIndex) + 1) continue;
     
-    const sourceRace = values[sourceIndex].trim();
-    const targetRace = values[targetIndex].trim();
-    const ratioAvgStr = values[ratioAvgIndex].trim();
+    const sourceRace = values[sourceIndex];
+    const targetRace = values[targetIndex];
     
-    // Skip empty values for required fields (except ratioAvg which can be null)
+    // Skip empty values for required fields
     if (!sourceRace || !targetRace) continue;
     
     // Add races to unique set
@@ -70,17 +79,21 @@ function parseRaceData(csvText: string): void {
     const ratio: RaceRatio = {
       source: sourceRace,
       target: targetRace,
-      ratioAvg: ratioAvgStr ? parseFloat(ratioAvgStr) : null
+      ratioAvg: null
     };
     
-    // Only add valid entries (non-NaN) and keep nulls as nulls
-    if (ratio.ratioAvg !== null && isNaN(ratio.ratioAvg)) {
-      ratio.ratioAvg = null;
+    // Add ratioAvg if it exists
+    if (ratioAvgIndex !== -1 && ratioAvgIndex < values.length) {
+      const ratioAvgStr = values[ratioAvgIndex];
+      if (ratioAvgStr) {
+        const ratioAvg = parseFloat(ratioAvgStr);
+        ratio.ratioAvg = !isNaN(ratioAvg) ? ratioAvg : null;
+      }
     }
     
     // Add optional ratios if they exist
-    if (ratioMedianIndex !== -1 && values[ratioMedianIndex]) {
-      const ratioMedianStr = values[ratioMedianIndex].trim();
+    if (ratioMedianIndex !== -1 && ratioMedianIndex < values.length) {
+      const ratioMedianStr = values[ratioMedianIndex];
       if (ratioMedianStr) {
         const ratioMedian = parseFloat(ratioMedianStr);
         ratio.ratioMedian = !isNaN(ratioMedian) ? ratioMedian : null;
@@ -89,8 +102,8 @@ function parseRaceData(csvText: string): void {
       }
     }
     
-    if (ratioWinnerIndex !== -1 && values[ratioWinnerIndex]) {
-      const ratioWinnerStr = values[ratioWinnerIndex].trim();
+    if (ratioWinnerIndex !== -1 && ratioWinnerIndex < values.length) {
+      const ratioWinnerStr = values[ratioWinnerIndex];
       if (ratioWinnerStr) {
         const ratioWinner = parseFloat(ratioWinnerStr);
         ratio.ratioWinner = !isNaN(ratioWinner) ? ratioWinner : null;
