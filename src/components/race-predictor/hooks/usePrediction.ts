@@ -60,17 +60,32 @@ export function usePrediction() {
       return predictTime(entry.time, entry.race, targetRace);
     });
     
-    // Filter out any "No data available" predictions
-    const validPredictions = predictions.filter(pred => pred.avg !== "No data available");
+    // Check if any prediction has "No common runners"
+    const noCommonRunnersExists = predictions.some(pred => pred.avg === "No common runners");
+    if (noCommonRunnersExists) {
+      toast.info("Some races have no common runners with the target race");
+    }
+    
+    // Filter out any "No data available" or "No common runners" predictions
+    const validPredictions = predictions.filter(pred => 
+      pred.avg !== "No data available" && pred.avg !== "No common runners"
+    );
     
     if (validPredictions.length === 0) {
+      if (noCommonRunnersExists) {
+        toast.error("No common runners between selected races");
+      } else {
+        toast.error("No valid predictions available");
+      }
       setPredictedResult(null);
-      toast.error("No valid predictions available");
       return;
     }
     
     if (validPredictions.length < predictions.length) {
-      toast.warning(`${predictions.length - validPredictions.length} prediction(s) could not be calculated due to missing data`);
+      const missingCount = predictions.length - validPredictions.length;
+      if (!noCommonRunnersExists) {
+        toast.warning(`${missingCount} prediction(s) could not be calculated due to missing data`);
+      }
     }
     
     // Process average predictions

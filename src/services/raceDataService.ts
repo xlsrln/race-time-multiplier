@@ -1,12 +1,11 @@
-
 import { timeToSeconds, secondsToTime, formatTimeString } from '../utils/timeUtils';
 
 export interface RaceRatio {
   source: string;
   target: string;
-  ratioAvg: number;
-  ratioMedian?: number;
-  ratioWinner?: number;
+  ratioAvg: number | null;
+  ratioMedian?: number | null;
+  ratioWinner?: number | null;
 }
 
 let raceRatios: RaceRatio[] = [];
@@ -60,37 +59,43 @@ function parseRaceData(csvText: string): void {
     const targetRace = values[targetIndex].trim();
     const ratioAvgStr = values[ratioAvgIndex].trim();
     
-    // Skip empty values for required fields
-    if (!sourceRace || !targetRace || !ratioAvgStr) continue;
+    // Skip empty values for required fields (except ratioAvg which can be null)
+    if (!sourceRace || !targetRace) continue;
     
     // Add races to unique set
     uniqueRaces.add(sourceRace);
     uniqueRaces.add(targetRace);
     
-    const ratioAvg = parseFloat(ratioAvgStr);
-    if (isNaN(ratioAvg) || ratioAvg <= 0) continue;
-    
-    // Create ratio object
+    // Create ratio object with potentially null ratios
     const ratio: RaceRatio = {
       source: sourceRace,
       target: targetRace,
-      ratioAvg: ratioAvg
+      ratioAvg: ratioAvgStr ? parseFloat(ratioAvgStr) : null
     };
+    
+    // Only add valid entries (non-NaN) and keep nulls as nulls
+    if (ratio.ratioAvg !== null && isNaN(ratio.ratioAvg)) {
+      ratio.ratioAvg = null;
+    }
     
     // Add optional ratios if they exist
     if (ratioMedianIndex !== -1 && values[ratioMedianIndex]) {
       const ratioMedianStr = values[ratioMedianIndex].trim();
-      const ratioMedian = parseFloat(ratioMedianStr);
-      if (!isNaN(ratioMedian) && ratioMedian > 0) {
-        ratio.ratioMedian = ratioMedian;
+      if (ratioMedianStr) {
+        const ratioMedian = parseFloat(ratioMedianStr);
+        ratio.ratioMedian = !isNaN(ratioMedian) ? ratioMedian : null;
+      } else {
+        ratio.ratioMedian = null;
       }
     }
     
     if (ratioWinnerIndex !== -1 && values[ratioWinnerIndex]) {
       const ratioWinnerStr = values[ratioWinnerIndex].trim();
-      const ratioWinner = parseFloat(ratioWinnerStr);
-      if (!isNaN(ratioWinner) && ratioWinner > 0) {
-        ratio.ratioWinner = ratioWinner;
+      if (ratioWinnerStr) {
+        const ratioWinner = parseFloat(ratioWinnerStr);
+        ratio.ratioWinner = !isNaN(ratioWinner) ? ratioWinner : null;
+      } else {
+        ratio.ratioWinner = null;
       }
     }
     
@@ -133,6 +138,11 @@ export function predictTime(sourceTime: string, sourceRace: string, targetRace: 
   const ratio = findRatio(sourceRace, targetRace);
   if (!ratio) return { avg: "No data available" };
   
+  // Check if there are common runners between races
+  if (ratio.ratioAvg === null) {
+    return { avg: "No common runners" };
+  }
+  
   const secondsSource = timeToSeconds(sourceTime);
   if (secondsSource <= 0) return { avg: "00:00:00" };
   
@@ -140,11 +150,11 @@ export function predictTime(sourceTime: string, sourceRace: string, targetRace: 
     avg: secondsToTime(secondsSource / ratio.ratioAvg)
   };
   
-  if (ratio.ratioMedian) {
+  if (ratio.ratioMedian !== null && ratio.ratioMedian !== undefined) {
     result.median = secondsToTime(secondsSource / ratio.ratioMedian);
   }
   
-  if (ratio.ratioWinner) {
+  if (ratio.ratioWinner !== null && ratio.ratioWinner !== undefined) {
     result.winner = secondsToTime(secondsSource / ratio.ratioWinner);
   }
   
