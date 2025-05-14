@@ -31,10 +31,9 @@ function parseRaceData(csvText: string): void {
   const lines = csvText.split('\n');
   if (lines.length < 2) return;
 
-  // Parse header to get race names
+  // Skip header row
   const header = lines[0].split(',');
-  // First column is empty/row labels, so skip it
-  raceNames = header.slice(1).filter(name => name.trim().length > 0);
+  const uniqueRaces = new Set<string>();
   
   // Parse data rows
   for (let i = 1; i < lines.length; i++) {
@@ -42,33 +41,31 @@ function parseRaceData(csvText: string): void {
     if (!line) continue;
     
     const values = line.split(',');
-    if (values.length < 2) continue;
+    if (values.length < 3) continue;
     
     const sourceRace = values[0].trim();
+    const targetRace = values[1].trim();
+    const ratioStr = values[2].trim();
     
-    // Skip empty source race
-    if (!sourceRace) continue;
+    // Skip empty values
+    if (!sourceRace || !targetRace || !ratioStr) continue;
     
-    // Process each target race
-    for (let j = 1; j < values.length && j <= raceNames.length; j++) {
-      const ratioStr = values[j].trim();
-      if (!ratioStr) continue;
-      
-      const ratio = parseFloat(ratioStr);
-      if (isNaN(ratio) || ratio <= 0) continue;
-      
-      const targetRace = raceNames[j-1];
-      
-      raceRatios.push({
-        source: sourceRace,
-        target: targetRace,
-        ratio: ratio
-      });
-    }
+    // Add races to unique set
+    uniqueRaces.add(sourceRace);
+    uniqueRaces.add(targetRace);
+    
+    const ratio = parseFloat(ratioStr);
+    if (isNaN(ratio) || ratio <= 0) continue;
+    
+    raceRatios.push({
+      source: sourceRace,
+      target: targetRace,
+      ratio: ratio
+    });
   }
   
-  // Make sure race names list is unique and sorted
-  raceNames = [...new Set(raceNames)].sort();
+  // Convert set to sorted array
+  raceNames = Array.from(uniqueRaces).sort();
 }
 
 export function getRaceNames(): string[] {
