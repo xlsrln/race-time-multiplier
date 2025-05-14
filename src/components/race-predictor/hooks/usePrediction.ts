@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { predictTime, PredictionResult as ServicePredictionResult } from '../../../services/raceDataService';
 import { toast } from 'sonner';
@@ -59,47 +60,39 @@ export function usePrediction() {
       return predictTime(entry.time, entry.race, targetRace);
     });
     
-    // Check if all predictions have "No common runners"
-    const allNoCommonRunners = predictions.every(pred => pred.avg === "No common runners");
-    if (allNoCommonRunners) {
-      toast.info("No common runners between selected races and target race");
+    // Check if all predictions have "No common runners" or "No data available"
+    const allNoData = predictions.every(pred => 
+      pred.avg === "No data available" || pred.avg === "No common runners"
+    );
+    
+    if (allNoData && !predictions.some(pred => pred.median || pred.winner)) {
+      if (predictions.some(pred => pred.avg === "No common runners")) {
+        toast.info("No common runners between selected races and target race");
+      } else {
+        toast.error("No valid predictions available");
+      }
       setPredictedResult({
-        avg: "No common runners"
+        avg: predictions[0].avg // Use the first message
       });
       return;
     }
     
-    // Filter out any "No data available" predictions but keep "No common runners" for display
-    const validPredictions = predictions.filter(pred => pred.avg !== "No data available");
-    
-    if (validPredictions.length === 0) {
-      toast.error("No valid predictions available");
-      setPredictedResult(null);
-      return;
-    }
-    
-    // Check if avg prediction is "No common runners"
-    const hasNoCommonRunners = validPredictions.some(pred => pred.avg === "No common runners");
-    
-    // Initialize result
+    // Initialize result object
     const result: PredictionResult = { 
-      avg: hasNoCommonRunners ? "No common runners" : { time: "00:00:00", min: "00:00:00", max: "00:00:00" }
+      avg: "No common runners" // Default message
     };
     
     // Process actual numeric predictions for avg if there are any
-    if (!hasNoCommonRunners) {
-      // Get only numeric predictions
-      const numericAvgPredictions = validPredictions
-        .filter(p => p.avg !== "No common runners" && p.avg !== "No data available")
-        .map(p => p.avg as string);
-      
-      if (numericAvgPredictions.length > 0) {
-        result.avg = processPredictions(numericAvgPredictions);
-      }
+    const numericAvgPredictions = predictions
+      .filter(p => p.avg !== "No common runners" && p.avg !== "No data available")
+      .map(p => p.avg as string);
+    
+    if (numericAvgPredictions.length > 0) {
+      result.avg = processPredictions(numericAvgPredictions);
     }
     
     // Process median predictions if available
-    const medianPredictions = validPredictions
+    const medianPredictions = predictions
       .map(p => p.median)
       .filter(p => p !== undefined && p !== "No common runners" && p !== "No data available") as string[];
     
@@ -108,7 +101,7 @@ export function usePrediction() {
     }
     
     // Process winner predictions if available
-    const winnerPredictions = validPredictions
+    const winnerPredictions = predictions
       .map(p => p.winner)
       .filter(p => p !== undefined && p !== "No common runners" && p !== "No data available") as string[];
     

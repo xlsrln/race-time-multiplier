@@ -84,19 +84,19 @@ function parseRaceData(csvText: string): void {
       ratioAvg: null
     };
     
-    // Add ratioAvg if it exists
+    // Add ratioAvg if it exists and is not empty
     if (ratioAvgIndex !== -1 && ratioAvgIndex < values.length) {
       const ratioAvgStr = values[ratioAvgIndex];
-      if (ratioAvgStr) {
+      if (ratioAvgStr && ratioAvgStr.trim() !== '') {
         const ratioAvg = parseFloat(ratioAvgStr);
         ratio.ratioAvg = !isNaN(ratioAvg) ? ratioAvg : null;
       }
     }
     
-    // Add optional ratios if they exist
+    // Add optional ratios if they exist and are not empty
     if (ratioMedianIndex !== -1 && ratioMedianIndex < values.length) {
       const ratioMedianStr = values[ratioMedianIndex];
-      if (ratioMedianStr) {
+      if (ratioMedianStr && ratioMedianStr.trim() !== '') {
         const ratioMedian = parseFloat(ratioMedianStr);
         ratio.ratioMedian = !isNaN(ratioMedian) ? ratioMedian : null;
       } else {
@@ -106,7 +106,7 @@ function parseRaceData(csvText: string): void {
     
     if (ratioWinnerIndex !== -1 && ratioWinnerIndex < values.length) {
       const ratioWinnerStr = values[ratioWinnerIndex];
-      if (ratioWinnerStr) {
+      if (ratioWinnerStr && ratioWinnerStr.trim() !== '') {
         const ratioWinner = parseFloat(ratioWinnerStr);
         ratio.ratioWinner = !isNaN(ratioWinner) ? ratioWinner : null;
       } else {
@@ -153,16 +153,11 @@ export function predictTime(sourceTime: string, sourceRace: string, targetRace: 
   const ratio = findRatio(sourceRace, targetRace);
   if (!ratio) return { avg: "No data available" };
   
-  // Check if there are common runners between races
-  if (ratio.ratioAvg === null) {
-    return { avg: "No common runners" };
-  }
-  
   const secondsSource = timeToSeconds(sourceTime);
   if (secondsSource <= 0) return { avg: "00:00:00" };
   
   const result: PredictionResult = {
-    avg: secondsToTime(secondsSource / ratio.ratioAvg)
+    avg: ratio.ratioAvg === null ? "No common runners" : secondsToTime(secondsSource / ratio.ratioAvg)
   };
   
   if (ratio.ratioMedian !== null && ratio.ratioMedian !== undefined) {
