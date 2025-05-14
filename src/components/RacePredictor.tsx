@@ -12,14 +12,19 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+
+interface SourceRaceEntry {
+  race: string;
+  time: string;
+}
 
 const RacePredictor: React.FC = () => {
   const [raceNames, setRaceNames] = useState<string[]>([]);
-  const [sourceRace, setSourceRace] = useState<string>("");
+  const [sourceRaces, setSourceRaces] = useState<SourceRaceEntry[]>([{ race: "", time: "" }]);
   const [targetRace, setTargetRace] = useState<string>("");
-  const [sourceTime, setSourceTime] = useState<string>("");
   const [predictedTime, setPredictedTime] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +39,7 @@ const RacePredictor: React.FC = () => {
         setRaceNames(names);
         
         if (names.length > 0) {
-          setSourceRace(names[0]);
+          setSourceRaces([{ race: names[0], time: "" }]);
           setTargetRace(names[0]);
         }
         
@@ -51,20 +56,103 @@ const RacePredictor: React.FC = () => {
   }, []);
   
   const handlePrediction = () => {
-    if (!sourceRace || !targetRace || !sourceTime) {
+    // Validate all entries
+    const invalidEntries = sourceRaces.filter(entry => !entry.race || !entry.time);
+    if (invalidEntries.length > 0 || !targetRace) {
       toast.warning("Please fill all fields");
       return;
     }
     
-    // Validate time format
-    const timePattern = /^(\d{1,2}:)?(\d{1,2}:)?(\d{1,2})$/;
-    if (!timePattern.test(sourceTime)) {
-      toast.warning("Please enter a valid time (HH:MM:SS, MM:SS or SS)");
+    // Validate time format for all entries
+    const timePattern = /^(\d{1,2}:)?(\d{1,2})(?::(\d{1,2}))?$/;
+    const invalidTimes = sourceRaces.filter(entry => !timePattern.test(entry.time));
+    if (invalidTimes.length > 0) {
+      toast.warning("Please enter valid times (HH:MM, MM:SS or HH:MM:SS)");
       return;
     }
     
-    const prediction = predictTime(sourceTime, sourceRace, targetRace);
-    setPredictedTime(prediction);
+    // Format times to ensure they're all in HH:MM:SS format
+    const formattedEntries = sourceRaces.map(entry => {
+      const parts = entry.time.split(':');
+      let formattedTime = entry.time;
+      
+      // If only two parts, assume it's MM:SS and add 00 for hours
+      if (parts.length === 2) {
+        formattedTime = `00:${entry.time}`;
+      }
+      // If only one part, assume it's just seconds
+      else if (parts.length === 1) {
+        formattedTime = `00:00:${entry.time}`;
+      }
+      
+      return {
+        race: entry.race,
+        time: formattedTime
+      };
+    });
+    
+    // Get prediction for each source race
+    const predictions = formattedEntries.map(entry => {
+      return predictTime(entry.time, entry.race, targetRace);
+    });
+    
+    // Filter out any "No data available" predictions
+    const validPredictions = predictions.filter(pred => pred !== "No data available");
+    
+    if (validPredictions.length === 0) {
+      setPredictedTime("No data available");
+      return;
+    }
+    
+    if (validPredictions.length < predictions.length) {
+      toast.warning(`${predictions.length - validPredictions.length} prediction(s) could not be calculated due to missing data`);
+    }
+    
+    // If only one valid prediction, use it directly
+    if (validPredictions.length === 1) {
+      setPredictedTime(validPredictions[0]);
+      return;
+    }
+    
+    // Calculate average prediction
+    const secondsArray = validPredictions.map(time => {
+      const parts = time.split(':');
+      const hours = parseInt(parts[0], 10);
+      const minutes = parseInt(parts[1], 10);
+      const seconds = parseInt(parts[2], 10);
+      return hours * 3600 + minutes * 60 + seconds;
+    });
+    
+    const totalSeconds = secondsArray.reduce((sum, seconds) => sum + seconds, 0);
+    const averageSeconds = totalSeconds / validPredictions.length;
+    
+    // Convert average seconds back to HH:MM:SS format
+    const hours = Math.floor(averageSeconds / 3600);
+    const minutes = Math.floor((averageSeconds % 3600) / 60);
+    const seconds = Math.floor(averageSeconds % 60);
+    
+    setPredictedTime(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+  };
+  
+  const addSourceRace = () => {
+    if (raceNames.length === 0) return;
+    setSourceRaces([...sourceRaces, { race: raceNames[0], time: "" }]);
+  };
+  
+  const removeSourceRace = (index: number) => {
+    if (sourceRaces.length === 1) {
+      // Don't remove the last one
+      return;
+    }
+    const updatedRaces = [...sourceRaces];
+    updatedRaces.splice(index, 1);
+    setSourceRaces(updatedRaces);
+  };
+  
+  const updateSourceRace = (index: number, field: 'race' | 'time', value: string) => {
+    const updatedRaces = [...sourceRaces];
+    updatedRaces[index] = { ...updatedRaces[index], [field]: value };
+    setSourceRaces(updatedRaces);
   };
   
   return (
@@ -72,7 +160,7 @@ const RacePredictor: React.FC = () => {
       <CardHeader>
         <CardTitle className="text-2xl text-center">Race Time Predictor</CardTitle>
         <CardDescription className="text-center">
-          Predict your finish time for a race based on your performance in another race.
+          Predict your finish time for a race based on your performance in other races.
         </CardDescription>
       </CardHeader>
       
@@ -85,28 +173,60 @@ const RacePredictor: React.FC = () => {
           <div className="text-center text-red-500">{error}</div>
         ) : (
           <>
-            <div className="space-y-2">
-              <Label htmlFor="sourceRace">Race you've completed</Label>
-              <Select value={sourceRace} onValueChange={setSourceRace}>
-                <SelectTrigger id="sourceRace">
-                  <SelectValue placeholder="Select race" />
-                </SelectTrigger>
-                <SelectContent>
-                  {raceNames.map((race) => (
-                    <SelectItem key={`source-${race}`} value={race}>{race}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="sourceTime">Your finish time (HH:MM:SS)</Label>
-              <Input 
-                id="sourceTime" 
-                placeholder="00:00:00" 
-                value={sourceTime} 
-                onChange={(e) => setSourceTime(e.target.value)} 
-              />
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <Label>Races you've completed</Label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={addSourceRace}
+                >
+                  Add Race
+                </Button>
+              </div>
+              
+              {sourceRaces.map((entry, index) => (
+                <div key={index} className="flex space-x-2 items-end">
+                  <div className="w-1/2 space-y-2">
+                    <Label htmlFor={`sourceRace-${index}`}>Race</Label>
+                    <Select 
+                      value={entry.race} 
+                      onValueChange={(value) => updateSourceRace(index, 'race', value)}
+                    >
+                      <SelectTrigger id={`sourceRace-${index}`}>
+                        <SelectValue placeholder="Select race" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {raceNames.map((race) => (
+                          <SelectItem key={`source-${index}-${race}`} value={race}>{race}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="w-1/2 space-y-2">
+                    <Label htmlFor={`sourceTime-${index}`}>Time (HH:MM or MM:SS)</Label>
+                    <Input 
+                      id={`sourceTime-${index}`} 
+                      placeholder="hh:mm or mm:ss" 
+                      value={entry.time} 
+                      onChange={(e) => updateSourceRace(index, 'time', e.target.value)} 
+                    />
+                  </div>
+                  
+                  {sourceRaces.length > 1 && (
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => removeSourceRace(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
             </div>
             
             <div className="flex items-center justify-center my-4">
@@ -130,10 +250,16 @@ const RacePredictor: React.FC = () => {
             <Button 
               className="w-full mt-4" 
               onClick={handlePrediction}
-              disabled={!sourceRace || !targetRace || !sourceTime}
+              disabled={!targetRace || sourceRaces.some(entry => !entry.race || !entry.time)}
             >
               Predict Time
             </Button>
+            
+            {sourceRaces.length > 1 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Badge variant="outline" className="text-xs">Using average of {sourceRaces.length} races</Badge>
+              </div>
+            )}
             
             {predictedTime && (
               <div className="mt-6 p-4 border rounded-lg bg-muted/50">

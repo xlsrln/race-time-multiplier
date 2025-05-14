@@ -1,5 +1,5 @@
 
-// Function to convert time string (HH:MM:SS) to seconds
+// Function to convert time string (HH:MM:SS, MM:SS, or HH:MM) to seconds
 export function timeToSeconds(timeString: string): number {
   // Handle empty input
   if (!timeString) return 0;
@@ -10,7 +10,8 @@ export function timeToSeconds(timeString: string): number {
     // HH:MM:SS format
     return parts[0] * 3600 + parts[1] * 60 + parts[2];
   } else if (parts.length === 2) {
-    // MM:SS format
+    // Could be either MM:SS or HH:MM format
+    // For simplicity in this context, we'll assume MM:SS
     return parts[0] * 60 + parts[1];
   } else if (parts.length === 1) {
     // SS format
@@ -33,4 +34,25 @@ export function secondsToTime(seconds: number): string {
     minutes.toString().padStart(2, '0'),
     secs.toString().padStart(2, '0')
   ].join(':');
+}
+
+// Function to ensure a time string is in HH:MM:SS format
+export function formatTimeString(timeString: string): string {
+  // Handle empty input
+  if (!timeString) return "00:00:00";
+  
+  const parts = timeString.split(':');
+  
+  if (parts.length === 3) {
+    // Already in HH:MM:SS format
+    return timeString;
+  } else if (parts.length === 2) {
+    // MM:SS format - add hours
+    return `00:${timeString}`;
+  } else if (parts.length === 1) {
+    // Just seconds
+    return `00:00:${timeString}`;
+  }
+  
+  return "00:00:00";
 }
