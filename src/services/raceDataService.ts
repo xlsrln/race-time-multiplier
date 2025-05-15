@@ -157,7 +157,7 @@ export function predictTime(sourceTime: string, sourceRace: string, targetRace: 
   if (secondsSource <= 0) return { avg: "00:00:00" };
   
   const result: PredictionResult = {
-    avg: ratio.ratioAvg === null ? "No common runners" : secondsToTime(secondsSource / ratio.ratioAvg)
+    avg: ratio.ratioAvg === null ? "No runners in common" : secondsToTime(secondsSource / ratio.ratioAvg)
   };
   
   if (ratio.ratioMedian !== null && ratio.ratioMedian !== undefined) {

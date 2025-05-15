@@ -60,14 +60,14 @@ export function usePrediction() {
       return predictTime(entry.time, entry.race, targetRace);
     });
     
-    // Check if all predictions have "No common runners" or "No data available"
+    // Check if all predictions have "No runners in common" or "No data available"
     const allNoData = predictions.every(pred => 
-      pred.avg === "No data available" || pred.avg === "No common runners"
+      pred.avg === "No data available" || pred.avg === "No runners in common"
     );
     
     if (allNoData && !predictions.some(pred => pred.median || pred.winner)) {
-      if (predictions.some(pred => pred.avg === "No common runners")) {
-        toast.info("No common runners between selected races and target race");
+      if (predictions.some(pred => pred.avg === "No runners in common")) {
+        toast.info("No runners in common between selected races and target race");
       } else {
         toast.error("No valid predictions available");
       }
@@ -79,12 +79,12 @@ export function usePrediction() {
     
     // Initialize result object
     const result: PredictionResult = { 
-      avg: "No common runners" // Default message
+      avg: "No runners in common" // Default message
     };
     
     // Process actual numeric predictions for avg if there are any
     const numericAvgPredictions = predictions
-      .filter(p => p.avg !== "No common runners" && p.avg !== "No data available")
+      .filter(p => p.avg !== "No runners in common" && p.avg !== "No data available")
       .map(p => p.avg as string);
     
     if (numericAvgPredictions.length > 0) {
@@ -94,7 +94,7 @@ export function usePrediction() {
     // Process median predictions if available
     const medianPredictions = predictions
       .map(p => p.median)
-      .filter(p => p !== undefined && p !== "No common runners" && p !== "No data available") as string[];
+      .filter(p => p !== undefined && p !== "No runners in common" && p !== "No data available") as string[];
     
     if (medianPredictions.length > 0) {
       result.median = processPredictions(medianPredictions);
@@ -103,7 +103,7 @@ export function usePrediction() {
     // Process winner predictions if available
     const winnerPredictions = predictions
       .map(p => p.winner)
-      .filter(p => p !== undefined && p !== "No common runners" && p !== "No data available") as string[];
+      .filter(p => p !== undefined && p !== "No runners in common" && p !== "No data available") as string[];
     
     if (winnerPredictions.length > 0) {
       result.winner = processPredictions(winnerPredictions);
