@@ -36,7 +36,8 @@ const RacePredictorContainer: React.FC = () => {
     <Card className="w-full max-w-3xl">
       <CardHeader>
         <CardDescription className="text-center">
-          Predict your finish time for a race based on your performance in other races. Currently contains a selection of ultra races in Sweden.
+          Predict your finish time for a race based on your performance in other races. 
+          Currently contains a selection of ultra races in Sweden based on number of finishers. 
         </CardDescription>
       </CardHeader>
       
