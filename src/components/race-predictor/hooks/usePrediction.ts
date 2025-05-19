@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { predictTime, PredictionResult as ServicePredictionResult } from '../../../services/raceDataService';
 import { toast } from 'sonner';
 import { secondsToTime } from '../../../utils/timeUtils';
+import type { DataSourceMode } from './useRaceData';
 
 interface SourceRaceEntry {
   race: string;
@@ -10,27 +10,31 @@ interface SourceRaceEntry {
 }
 
 export interface PredictionResult {
-  avg: {
+  avg?: {
     time: string;
     min: string;
     max: string;
   } | string;
-  median?: {
+  median?: { // Allow string type
     time: string;
     min: string;
     max: string;
-  };
-  winner?: {
+  } | string;
+  winner?: { // Allow string type
     time: string;
     min: string;
     max: string;
-  };
+  } | string;
 }
 
 export function usePrediction() {
   const [predictedResult, setPredictedResult] = useState<PredictionResult | null>(null);
   
-  const handlePrediction = (sourceRaces: SourceRaceEntry[], targetRace: string) => {
+  const handlePrediction = (
+    sourceRaces: SourceRaceEntry[], 
+    targetRace: string,
+    dataSourceMode: DataSourceMode
+  ) => {
     // Validate all entries
     const invalidEntries = sourceRaces.filter(entry => !entry.race || !entry.time);
     if (invalidEntries.length > 0 || !targetRace) {
@@ -38,78 +42,90 @@ export function usePrediction() {
       return;
     }
     
-    // Validate time format for all entries (HH:MM format)
+    // Validate time format for all entries (HH:MM or HH:MM:SS format)
     const timePattern = /^(\d{1,2}):(\d{1,2})$/;
-    const invalidTimes = sourceRaces.filter(entry => !timePattern.test(entry.time));
+    const timePatternWithSeconds = /^(\d{1,2}):(\d{1,2}):(\d{1,2})$/;
+    const invalidTimes = sourceRaces.filter(entry => 
+        !timePattern.test(entry.time) && !timePatternWithSeconds.test(entry.time)
+    );
     if (invalidTimes.length > 0) {
-      toast.warning("Please enter valid times in HH:MM format");
+      toast.warning("Please enter valid times in HH:MM or HH:MM:SS format");
       return;
     }
     
     // Format times to ensure they're all in HH:MM:SS format for processing
     const formattedEntries = sourceRaces.map(entry => {
-      // Add 00 seconds to the HH:MM format
+      // Add 00 seconds to the HH:MM format if necessary
       return {
         race: entry.race,
-        time: `${entry.time}:00`
+        time: timePattern.test(entry.time) ? `${entry.time}:00` : entry.time
       };
     });
     
     // Get prediction for each source race
-    const predictions = formattedEntries.map(entry => {
-      return predictTime(entry.time, entry.race, targetRace);
+    const predictions: ServicePredictionResult[] = formattedEntries.map(entry => {
+      return predictTime(entry.time, entry.race, targetRace, dataSourceMode);
     });
     
-    // Check if all predictions have "No runners in common" or "No data available"
-    const allNoData = predictions.every(pred => 
-      pred.avg === "No data available" || pred.avg === "No runners in common"
-    );
+    // Consolidate predictions
+    const result: PredictionResult = {};
     
-    if (allNoData && !predictions.some(pred => pred.median || pred.winner)) {
-      if (predictions.some(pred => pred.avg === "No runners in common")) {
-        toast.info("No runners in common between selected races and target race");
-      } else {
-        toast.error("No valid predictions available");
-      }
-      setPredictedResult({
-        avg: predictions[0].avg // Use the first message
-      });
-      return;
+    // Filter out predictions that are "No data available" or similar, unless it's the only message
+    const validAvgPredictions = predictions.map(p => p.avg).filter(p => p && !p.toLowerCase().includes("no data") && !p.toLowerCase().includes("n/a")  && !p.toLowerCase().includes("no runners"));
+    const validMedianPredictions = predictions.map(p => p.median).filter(p => p && !p.toLowerCase().includes("no data") && !p.toLowerCase().includes("n/a"));
+    const validWinnerPredictions = predictions.map(p => p.winner).filter(p => p && !p.toLowerCase().includes("no data") && !p.toLowerCase().includes("n/a"));
+
+    if (validAvgPredictions.length > 0) {
+      result.avg = processPredictions(validAvgPredictions as string[]);
+    } else if (predictions.some(p => p.avg)) { // If no numeric, take the first message string if any
+        const firstAvgMessage = predictions.find(p => p.avg)?.avg;
+        if (firstAvgMessage && (firstAvgMessage.toLowerCase().includes("no runners") || firstAvgMessage.toLowerCase().includes("no data") || firstAvgMessage.toLowerCase().includes("n/a"))) {
+           result.avg = firstAvgMessage;
+        }
+    }
+
+    if (validMedianPredictions.length > 0) {
+      result.median = processPredictions(validMedianPredictions as string[]);
+    } else if (predictions.some(p => p.median)) {
+        const firstMedianMessage = predictions.find(p => p.median)?.median;
+        if (firstMedianMessage && (firstMedianMessage.toLowerCase().includes("no data") || firstMedianMessage.toLowerCase().includes("n/a"))) {
+           result.median = firstMedianMessage as string; // Cast as string for message
+        }
+    }
+
+    if (validWinnerPredictions.length > 0) {
+      result.winner = processPredictions(validWinnerPredictions as string[]);
+    } else if (predictions.some(p => p.winner)) {
+        const firstWinnerMessage = predictions.find(p => p.winner)?.winner;
+         if (firstWinnerMessage && (firstWinnerMessage.toLowerCase().includes("no data") || firstWinnerMessage.toLowerCase().includes("n/a"))) {
+           result.winner = firstWinnerMessage as string; // Cast as string for message
+        }
     }
     
-    // Initialize result object
-    const result: PredictionResult = { 
-      avg: "No runners in common" // Default message
-    };
-    
-    // Process actual numeric predictions for avg if there are any
-    const numericAvgPredictions = predictions
-      .filter(p => p.avg !== "No runners in common" && p.avg !== "No data available")
-      .map(p => p.avg as string);
-    
-    if (numericAvgPredictions.length > 0) {
-      result.avg = processPredictions(numericAvgPredictions);
+    // If all are undefined or contain "No data" type messages, show a general toast.
+    const noNumericAvg = !result.avg || (typeof result.avg === 'string' && (result.avg.toLowerCase().includes("no data") || result.avg.toLowerCase().includes("no runners") || result.avg.toLowerCase().includes("n/a")));
+    const noNumericMedian = !result.median || (typeof result.median === 'string' && (result.median.toLowerCase().includes("no data") || result.median.toLowerCase().includes("n/a")));
+    const noNumericWinner = !result.winner || (typeof result.winner === 'string' && (result.winner.toLowerCase().includes("no data") || result.winner.toLowerCase().includes("n/a")));
+
+    if (noNumericAvg && noNumericMedian && noNumericWinner) {
+        if (dataSourceMode === 'default' && predictions.some(p => p.avg === "No runners in common")) {
+            toast.info("No runners in common for selected race pair(s).");
+        } else if (predictions.some(p => p.avg === "No data available" || p.winner === "No data available")) {
+            toast.info("No data available for prediction with selected race pair(s).");
+        } else if (dataSourceMode === 'euWinner' && predictions.some(p => p.winner && p.winner.startsWith("No winner data"))){
+             toast.info("No winner data available for this pair in the EU Winner Times source.");
+        }
+         else {
+            toast.error("No valid predictions could be made.");
+        }
     }
     
-    // Process median predictions if available
-    const medianPredictions = predictions
-      .map(p => p.median)
-      .filter(p => p !== undefined && p !== "No runners in common" && p !== "No data available") as string[];
-    
-    if (medianPredictions.length > 0) {
-      result.median = processPredictions(medianPredictions);
+    // If result is empty, set to null to hide previous results, otherwise set it.
+    if (Object.keys(result).length === 0) {
+        setPredictedResult(null);
+    } else {
+        setPredictedResult(result);
     }
-    
-    // Process winner predictions if available
-    const winnerPredictions = predictions
-      .map(p => p.winner)
-      .filter(p => p !== undefined && p !== "No runners in common" && p !== "No data available") as string[];
-    
-    if (winnerPredictions.length > 0) {
-      result.winner = processPredictions(winnerPredictions);
-    }
-    
-    setPredictedResult(result);
   };
   
   function processPredictions(predictions: string[]): { time: string; min: string; max: string; } {

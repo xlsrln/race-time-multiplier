@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import EuWinnerBeta from "./pages/EuWinnerBeta";
 import NotFound from "./pages/NotFound";
 
 // Create a new query client
@@ -28,6 +29,7 @@ const App = () => (
       <BrowserRouter basename={getBaseName()}>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/eu-winner-beta" element={<EuWinnerBeta />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -2,21 +2,33 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardDescription, CardFooter } from "@/components/ui/card";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-import SourceRaceForm from './SourceRaceForm';
-import TargetRaceSelector from './TargetRaceSelector';
-import PredictionResult from './PredictionResult';
-import LoadingState from './LoadingState';
+import SourceRaceForm from '../race-predictor/SourceRaceForm';
+import TargetRaceSelector from '../race-predictor/TargetRaceSelector';
+import PredictionResult from '../race-predictor/PredictionResult';
+import LoadingState from '../race-predictor/LoadingState';
 
-import { useRaceData } from './hooks/useRaceData';
-import { usePrediction } from './hooks/usePrediction';
+import { useRaceData } from '../race-predictor/hooks/useRaceData';
+import { usePrediction } from '../race-predictor/hooks/usePrediction';
 
 import type { EuRaceData } from '@/services/raceDataService';
 
-const RacePredictorContainer: React.FC = () => {
+const EuWinnerPredictorContainer: React.FC = () => {
   const {
     raceNames,
+    euCountries,
+    selectedCountry,
+    setSelectedCountry,
     sourceRaces,
     targetRace,
     isLoading,
@@ -27,7 +39,7 @@ const RacePredictorContainer: React.FC = () => {
     removeSourceRace,
     updateSourceRace,
     getRaceDetails
-  } = useRaceData('default');
+  } = useRaceData('euWinner');
   
   const { predictedResult, handlePrediction } = usePrediction();
   
@@ -35,12 +47,15 @@ const RacePredictorContainer: React.FC = () => {
     handlePrediction(sourceRaces, targetRace, dataSourceMode);
   };
   
+  // Filter out empty country names
+  const validCountries = euCountries.filter(country => country.trim() !== "");
+  
   return (
     <Card className="w-full max-w-3xl">
       <CardHeader>
+        <Badge variant="secondary" className="mb-2 mx-auto">Beta</Badge>
         <CardDescription className="text-center">
-          Predict your finish time for a race based on your performance in other races. 
-          Currently contains a selection of ultra races in Sweden based on number of finishers. 
+          EU Winner Times Mode: Predict your finish time based on winner times from European ultra races.
         </CardDescription>
       </CardHeader>
       
@@ -49,6 +64,33 @@ const RacePredictorContainer: React.FC = () => {
         
         {!isLoading && !error && (
           <>
+            <Badge variant="outline" className="w-full flex justify-center text-xs py-1">
+              Using EU Winner Times specific data (based on winning times)
+            </Badge>
+            
+            <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+              <Label htmlFor="country-select" className="text-sm font-medium whitespace-nowrap">
+                Filter by Country:
+              </Label>
+              <Select
+                value={selectedCountry}
+                onValueChange={setSelectedCountry}
+              >
+                <SelectTrigger className="flex-1" id="country-select">
+                  <SelectValue placeholder="All Countries" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Countries</SelectItem>
+                  {validCountries.map(country => (
+                    <SelectItem key={country} value={country}>
+                      {country}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Search className="h-4 w-4 text-muted-foreground" />
+            </div>
+
             <SourceRaceForm
               sourceRaces={sourceRaces}
               raceNames={raceNames}
@@ -79,12 +121,6 @@ const RacePredictorContainer: React.FC = () => {
               Predict Time
             </Button>
             
-            {dataSourceMode === 'default' && sourceRaces.length > 1 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                <div className="text-xs text-muted-foreground">Using average of {sourceRaces.length} races for prediction aggregation</div>
-              </div>
-            )}
-            
             {predictedResult && (
               <PredictionResult
                 avg={predictedResult.avg}
@@ -98,11 +134,11 @@ const RacePredictorContainer: React.FC = () => {
       </CardContent>
       
       <CardFooter className="text-xs text-center text-muted-foreground flex flex-col justify-center gap-2 pt-6">
-        <p>Based on historical data from race finishers who finished both races in the same year. Race conditions and routes may vary year to year. These predictions should be considered as indications only.</p>
+        <p>This beta version uses winner times from races across Europe. Predictions are based on relative differences between race winner times.</p>
         <p className="pt-2 text-xs font-medium">by axel sarlin</p>
       </CardFooter>
     </Card>
   );
 };
 
-export default RacePredictorContainer;
+export default EuWinnerPredictorContainer;
